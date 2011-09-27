@@ -117,7 +117,7 @@ sub trim_label {
 }
 
 # Global variables
-my (%domains,@xentop,$domain,$munindomain,$cpusecs,$cpupercent,$memk,$mempercent,$maxmemk,$maxmempercent,$nettxk,$netrxk,$vbdrd,$vbdwr);
+my (%domains,$domain,$munindomain,$cpusecs,$memk,$nettxk,$netrxk,$vbdrd,$vbdwr);
 
 open (XENTOP,"xentop -b -f -i1 |") or die "Could not execute xentop, $!";
 
