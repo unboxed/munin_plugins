@@ -74,6 +74,7 @@ GPLv2
 =cut
 
 use strict;
+use Munin::Plugin;
 
 # autoconf - quite simple
 if ($ARGV[0] eq "autoconf") {
@@ -130,10 +131,8 @@ while (<XENTOP>) {
   # We define only what we need
   ($domain,undef,$cpusecs,undef,$memk,undef,undef,undef,undef,undef,$nettxk,$netrxk,undef,undef,$vbdrd,$vbdwr,undef,undef,undef) = split(/\s+/);
 
-  # We have to store the domain name in a separate variable
-  # in which we replace - and . by _
-  $domains{$domain}{'munindomain'} = $domain;
-  $domains{$domain}{'munindomain'} =~ s/[-.]/_/g;
+  # We have to store the sanitised domain name in a separate variable
+  $domains{$domain}{'munindomain'} = clean_fieldname($domain);
 
   # We need the remaining data only for a normal run
   if ($ARGV[0] eq "") {
