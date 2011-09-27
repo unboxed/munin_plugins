@@ -116,10 +116,10 @@ sub trim_label {
 }
 
 # Global variables
-my (%domains,@xentop,$domain,$munindomain,$cpusec,$cpupercent,$memk,$mempercent,$maxmemk,$maxmempercent,$nettxk,$netrxk,$vbdrd,$vbdwr);
+my (%domains,@xentop,$domain,$munindomain,$cpusecs,$cpupercent,$memk,$mempercent,$maxmemk,$maxmempercent,$nettxk,$netrxk,$vbdrd,$vbdwr);
 
 # We run xentop with two iterations (the first one always returns 0 for CPU %)
-open (XENTOP,"xentop -b -f -i2 |") or die "Could not execute xentop, $!";
+open (XENTOP,"xentop -b -f -i2 -d1 |") or die "Could not execute xentop, $!";
 
 # We parse the output backwards to process only the last iteration
 @xentop = reverse(<XENTOP>); close(XENTOP);
@@ -132,7 +132,7 @@ foreach (@xentop) {
   if (/^NAME/) { last; } else {
 
     # We define only what we need
-    ($domain,undef,undef,$cpupercent,$memk,undef,undef,undef,undef,undef,$nettxk,$netrxk,undef,undef,$vbdrd,$vbdwr,undef,undef,undef) = split(/\s+/);
+    ($domain,undef,$cpusecs,$cpupercent,$memk,undef,undef,undef,undef,undef,$nettxk,$netrxk,undef,undef,$vbdrd,$vbdwr,undef,undef,undef) = split(/\s+/);
 
     # We have to store the domain name in a separate variable
     # in which we replace - and . by _
@@ -141,6 +141,7 @@ foreach (@xentop) {
 
     # We need the remaining data only for a normal run
     if ($ARGV[0] eq "") {
+      $domains{$domain}{'cpusecs'} = $cpusecs;
       $domains{$domain}{'cpupercent'} = $cpupercent;
       $domains{$domain}{'mem'} = $memk;
       $domains{$domain}{'nettx'} = $nettxk;
@@ -167,6 +168,20 @@ if ($ARGV[0] eq "config") {
   for $domain (sort(keys(%domains))) {
     print "$domains{$domain}{'munindomain'}_cpu.label ".trim_label('pos',$domain)."\n";
     print "$domains{$domain}{'munindomain'}_cpu.draw AREASTACK\n";
+  }
+
+  print "\nmultigraph xen_cpu_time\n";
+  print "graph_title Xen domains CPU time\n";
+  print "graph_args --base 1000 -l 0\n";
+  print "graph_vlabel %\n";
+  print "graph_scale no\n";
+  print "graph_category xen\n";
+  print "graph_info This graph shows CPU time for each Xen domain.\n";
+  for $domain (sort(keys(%domains))) {
+    print "$domains{$domain}{'munindomain'}_cpu_time.label ".trim_label('pos',$domain)."\n";
+    print "$domains{$domain}{'munindomain'}_cpu_time.type COUNTER\n";
+    print "$domains{$domain}{'munindomain'}_cpu_time.cdef $domains{$domain}{'munindomain'}_cpu_time,100,*\n";
+    print "$domains{$domain}{'munindomain'}_cpu_time.draw AREASTACK\n";
   }
 
   print "\nmultigraph xen_mem\n";
@@ -226,6 +241,11 @@ if ($ARGV[0] eq "config") {
 print "multigraph xen_cpu\n";
 for $domain (sort(keys(%domains))) {
   print "$domains{$domain}{'munindomain'}_cpu.value $domains{$domain}{'cpupercent'}\n";
+}
+
+print "\nmultigraph xen_cpu_time\n";
+for $domain (sort(keys(%domains))) {
+  print "$domains{$domain}{'munindomain'}_cpu_time.value $domains{$domain}{'cpusecs'}\n";
 }
 
 print "\nmultigraph xen_mem\n";
