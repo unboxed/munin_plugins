@@ -118,36 +118,31 @@ sub trim_label {
 # Global variables
 my (%domains,@xentop,$domain,$munindomain,$cpusecs,$cpupercent,$memk,$mempercent,$maxmemk,$maxmempercent,$nettxk,$netrxk,$vbdrd,$vbdwr);
 
-# We run xentop with two iterations (the first one always returns 0 for CPU %)
-open (XENTOP,"xentop -b -f -i2 -d1 |") or die "Could not execute xentop, $!";
-
-# We parse the output backwards to process only the last iteration
-@xentop = reverse(<XENTOP>); close(XENTOP);
+open (XENTOP,"xentop -b -f -i1 |") or die "Could not execute xentop, $!";
 
 # Now we build a hash of hashes to store information
-foreach (@xentop) {
+while (<XENTOP>) {
   # Some cleaning first
   s/^\s+//; chomp;
-  # We stop processing at the headers
-  if (/^NAME/) { last; } else {
+  # Skip the headers
+  next if /^NAME/;
 
-    # We define only what we need
-    ($domain,undef,$cpusecs,undef,$memk,undef,undef,undef,undef,undef,$nettxk,$netrxk,undef,undef,$vbdrd,$vbdwr,undef,undef,undef) = split(/\s+/);
+  # We define only what we need
+  ($domain,undef,$cpusecs,undef,$memk,undef,undef,undef,undef,undef,$nettxk,$netrxk,undef,undef,$vbdrd,$vbdwr,undef,undef,undef) = split(/\s+/);
 
-    # We have to store the domain name in a separate variable
-    # in which we replace - and . by _
-    $domains{$domain}{'munindomain'} = $domain;
-    $domains{$domain}{'munindomain'} =~ s/[-.]/_/g;
+  # We have to store the domain name in a separate variable
+  # in which we replace - and . by _
+  $domains{$domain}{'munindomain'} = $domain;
+  $domains{$domain}{'munindomain'} =~ s/[-.]/_/g;
 
-    # We need the remaining data only for a normal run
-    if ($ARGV[0] eq "") {
-      $domains{$domain}{'cpusecs'} = $cpusecs;
-      $domains{$domain}{'mem'} = $memk;
-      $domains{$domain}{'nettx'} = $nettxk;
-      $domains{$domain}{'netrx'} = $netrxk;
-      $domains{$domain}{'vbdrd'} = $vbdrd;
-      $domains{$domain}{'vbdwr'} = $vbdwr;
-    }
+  # We need the remaining data only for a normal run
+  if ($ARGV[0] eq "") {
+    $domains{$domain}{'cpusecs'} = $cpusecs;
+    $domains{$domain}{'mem'} = $memk;
+    $domains{$domain}{'nettx'} = $nettxk;
+    $domains{$domain}{'netrx'} = $netrxk;
+    $domains{$domain}{'vbdrd'} = $vbdrd;
+    $domains{$domain}{'vbdwr'} = $vbdwr;
   }
 }
 
